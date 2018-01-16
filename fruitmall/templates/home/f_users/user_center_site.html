@@ -1,0 +1,123 @@
+{% extends 'base_center.html' %}
+{% load static from staticfiles %}
+{% block cbody %}
+
+		<div class="right_content clearfix">
+				<h3 class="common_title2">收货地址<a href="{% url 'user:addsite' %}">[+]</a></h3>
+                {% for i in dress  %}
+                {% if i.id == udata.caddress  %}
+				<div class="site_con site_address" style="border: 5px solid #ff9800">
+					<dl>
+                        <dt class="location"><span class="addressnav"><i style='color:#ff9800'>当前地址：</i></span><u>          <a style="cursor: pointer" onclick="getaddress({{ i.id }})">编辑地址</a></u></dt>
+						<dd>{{ i.detaiarea }} (收件人:{{ i.receiver }}) 电话:{{ i.phone }} </dd>
+                        <dd class="setcur" i="{{ i.id }}"></dd>
+					</dl>					
+				</div>
+                {% else %}
+                 <div class="site_con site_address">
+					<dl>
+						<dt class="location"><span class="addressnav">备用地址：</span><u>          <a style="cursor: pointer" onclick="getaddress({{ i.id }})">编辑地址</a></u></dt>
+						<dd>{{ i.detaiarea }} (收件人:{{ i.receiver }}) 电话:{{ i.phone }} </dd>
+					    <dd class="setcur" i="{{ i.id }}"></dd>
+                    </dl>
+				</div>
+                {% endif %}
+
+                {% empty  %}
+                 <div class="site_con">
+					<dl>
+						<dt>当前地址：</dt>
+						<dd>亲,你还没有添加收货地址</dd>
+					</dl>
+				</div>
+                {% endfor %}
+				<h3 class="common_title2">编辑地址</h3>
+				<div class="site_con centersite">
+					<form method="post" action="/user/site/">
+                        {% csrf_token %}
+                        <input type="hidden" name="senduid" value="{{ udata.id }}">
+                        <input type="hidden" name="aid" value="">
+						<div class="form_group">
+							<label>收件人：</label>
+							<input type="text" name="receiver">
+						</div>
+						<div class="form_group form_group2">
+							<label>详细地址：</label>
+							<textarea name="detaiarea" class="site_area"></textarea>
+						</div>
+						<div class="form_group">
+							<label>邮编：</label>
+							<input type="text" name="postcode">
+						</div>
+						<div class="form_group">
+							<label>手机：</label>
+							<input type="text" name="phone">
+						</div>
+
+						<input type="submit" name="" value="提交" class="info_submit">
+					</form>
+				</div>
+		</div>
+{% endblock %}
+{% block js %}
+    <script>
+    $(".site_address ").mouseover(function(){//这是当鼠标移到指定元素出现设置设置默认地址按钮
+        var indx=$(this).index()
+        indx=indx-1//获取是哪个元素
+
+        $(".setcur").eq(indx).empty()
+        var cadid=$(".setcur").eq(indx).attr("i")
+        $(".setcur").eq(indx).append("<div style='background-color: #e62e2e;color: #f8f8f8;margin-left: 30px;width: 140px;height: 30px;'><a onclick='caddress("+cadid+","+indx+")'>设为默认地址</a></div>")
+    })
+
+    $(".site_address ").mouseleave(function(){//这是当鼠标移出指定元素消除设置设置默认地址按钮
+        var indx=$(this).index()
+        indx=indx-1
+        $(".setcur").eq(indx).empty()
+    })
+    function caddress(cadid,indx){ //设置默认地址的函数
+        var uid={{ udata.id }}//设置哪个用户的默认地址
+        $.ajax({
+           type: "POST",
+           url: "/user/setcursite/",
+           data: "addressid="+cadid+"&uid="+uid,
+           success: function(msg){
+             console.log(msg)
+               if(msg[0]['res']=='ok'){
+
+                   var len=$(".site_address").length
+                   for(var i=0;i<len;i++){
+                      $(".addressnav").eq(i).html("备用地址：")
+                       $(".site_address").eq(i).css({
+                            'border':'',
+                       })
+                   }
+                   $(".site_address").eq(indx).css({
+                     'border':'5px solid #ff9800',
+                 })
+                   $(".addressnav").eq(indx).html("<i style='color:#ff9800'>当前地址：</i>")
+               }
+           }
+        });
+    }
+
+    function getaddress(aid){
+        $.ajax({
+           type: "POST",
+           url: "/user/getaddress/",
+           data: "aid="+aid,
+           success: function(msg){
+             if(msg[0]['res']=='ok'){
+                 $(".centersite input[name='aid']").eq(0).val(aid)
+                 $(".centersite input[name='receiver']").eq(0).val(msg[1]['receiver'])
+                 $(".centersite textarea[name='detaiarea']").eq(0).val(msg[1]['detaiarea'])
+                 $(".centersite input[name='postcode']").eq(0).val(msg[1]['postcode'])
+                 $(".centersite input[name='phone']").eq(0).val(msg[1]['phone'])
+             }
+           }
+        });
+    }
+
+    </script>
+{% endblock %}
+
